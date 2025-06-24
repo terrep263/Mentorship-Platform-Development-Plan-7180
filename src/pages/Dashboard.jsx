@@ -2,17 +2,22 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
+import { useQuestAuth } from '../contexts/QuestAuthContext';
 import { useSubscription } from '../contexts/SubscriptionContext';
 import { useCourses } from '../contexts/CourseContext';
 import SafeIcon from '../common/SafeIcon';
 import * as FiIcons from 'react-icons/fi';
 
-const { FiBook, FiClock, FiTrendingUp, FiPlay, FiFileText } = FiIcons;
+const { FiBook, FiClock, FiTrendingUp, FiPlay, FiFileText, FiTarget } = FiIcons;
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const { user: questUser } = useQuestAuth();
   const { subscription } = useSubscription();
   const { courses, progress } = useCourses();
+
+  // Use Quest user if available, otherwise fall back to regular auth user
+  const currentUser = questUser || user;
 
   const recentPosts = [
     {
@@ -38,14 +43,13 @@ const Dashboard = () => {
   return (
     <div className="px-4 py-6 space-y-6">
       {/* Welcome Section */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="bg-gradient-to-r from-primary-600 to-primary-700 text-white p-6 rounded-2xl"
       >
-        <h1 className="text-2xl font-bold mb-2">Welcome back, {user?.name}!</h1>
+        <h1 className="text-2xl font-bold mb-2">Welcome back, {currentUser?.name}!</h1>
         <p className="opacity-90">Ready to continue your learning journey?</p>
-        
         {subscription && (
           <div className="mt-4 flex items-center gap-4 text-sm">
             <span className="bg-white/20 px-3 py-1 rounded-full">
@@ -58,8 +62,44 @@ const Dashboard = () => {
         )}
       </motion.div>
 
+      {/* Quick Actions */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.05 }}
+        className="bg-white rounded-2xl shadow-sm border p-6"
+      >
+        <h2 className="text-xl font-bold text-gray-900 mb-4">Quick Actions</h2>
+        <div className="grid md:grid-cols-2 gap-4">
+          <Link
+            to="/get-started"
+            className="flex items-center gap-4 p-4 border border-gray-200 rounded-xl hover:border-primary-300 hover:shadow-md transition-all"
+          >
+            <div className="bg-primary-100 p-3 rounded-lg">
+              <SafeIcon icon={FiTarget} className="w-6 h-6 text-primary-600" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900">Get Started Guide</h3>
+              <p className="text-sm text-gray-600">Complete your setup and onboarding</p>
+            </div>
+          </Link>
+          <Link
+            to="/courses"
+            className="flex items-center gap-4 p-4 border border-gray-200 rounded-xl hover:border-primary-300 hover:shadow-md transition-all"
+          >
+            <div className="bg-accent-100 p-3 rounded-lg">
+              <SafeIcon icon={FiBook} className="w-6 h-6 text-accent-600" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900">Browse Courses</h3>
+              <p className="text-sm text-gray-600">Explore our course library</p>
+            </div>
+          </Link>
+        </div>
+      </motion.div>
+
       {/* Stats */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
@@ -115,7 +155,7 @@ const Dashboard = () => {
       </motion.div>
 
       {/* Continue Learning */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
@@ -123,14 +163,13 @@ const Dashboard = () => {
       >
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold text-gray-900">Continue Learning</h2>
-          <Link 
+          <Link
             to="/courses"
             className="text-primary-600 hover:text-primary-700 font-medium text-sm"
           >
             View All
           </Link>
         </div>
-
         <div className="space-y-4">
           {courses.slice(0, 2).map((course) => {
             const courseProgress = progress[course.id] || { percentage: 0 };
@@ -141,8 +180,8 @@ const Dashboard = () => {
                 className="block p-4 border border-gray-200 rounded-xl hover:border-primary-300 hover:shadow-md transition-all"
               >
                 <div className="flex items-center gap-4">
-                  <img 
-                    src={course.thumbnail} 
+                  <img
+                    src={course.thumbnail}
                     alt={course.title}
                     className="w-16 h-16 rounded-lg object-cover"
                   />
@@ -150,7 +189,7 @@ const Dashboard = () => {
                     <h3 className="font-semibold text-gray-900 mb-1">{course.title}</h3>
                     <p className="text-sm text-gray-600 mb-2">{course.description}</p>
                     <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div 
+                      <div
                         className="bg-primary-600 h-2 rounded-full transition-all"
                         style={{ width: `${courseProgress.percentage}%` }}
                       ></div>
@@ -165,7 +204,7 @@ const Dashboard = () => {
       </motion.div>
 
       {/* Recent Blog Posts */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
@@ -173,14 +212,13 @@ const Dashboard = () => {
       >
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold text-gray-900">Recent Insights</h2>
-          <Link 
+          <Link
             to="/blog"
             className="text-primary-600 hover:text-primary-700 font-medium text-sm"
           >
             View All
           </Link>
         </div>
-
         <div className="space-y-4">
           {recentPosts.map((post) => (
             <Link

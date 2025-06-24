@@ -3,20 +3,29 @@ import { useLocation } from 'react-router-dom';
 import Header from './Header';
 import Navigation from './Navigation';
 import { useAuth } from '../../contexts/AuthContext';
+import { useQuestAuth } from '../../contexts/QuestAuthContext';
 
 const Layout = ({ children }) => {
   const { user } = useAuth();
+  const { isAuthenticated } = useQuestAuth();
   const location = useLocation();
   
-  const hideNavigation = ['/login', '/'].includes(location.pathname);
+  const hideNavigation = [
+    '/', 
+    '/login', 
+    '/quest-login', 
+    '/onboarding'
+  ].includes(location.pathname);
+
+  const showNavigation = (user || isAuthenticated) && !hideNavigation;
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {user && !hideNavigation && <Header />}
-      <main className={user && !hideNavigation ? 'pb-16' : ''}>
+      {showNavigation && <Header />}
+      <main className={showNavigation ? 'pb-16' : ''}>
         {children}
       </main>
-      {user && !hideNavigation && <Navigation />}
+      {showNavigation && <Navigation />}
     </div>
   );
 };

@@ -19,6 +19,22 @@ body {
   height: 100vh;
 }
 
+/* Dynamic theme colors */
+:root {
+  --color-primary-50: #f0f9ff;
+  --color-primary-100: #e0f2fe;
+  --color-primary-500: #0ea5e9;
+  --color-primary-600: #0284c7;
+  --color-primary-700: #0369a1;
+  --color-primary-900: #0c4a6e;
+  --color-accent-500: #f59e0b;
+  --color-accent-600: #d97706;
+  --color-success-500: #10b981;
+  --color-success-600: #059669;
+  --color-error-500: #ef4444;
+  --color-error-600: #dc2626;
+}
+
 /* Custom prose styles for blog content */
 .prose {
   color: #374151;
@@ -67,3 +83,35 @@ body {
   font-weight: 600;
   color: #111827;
 }
+
+/* Dynamic color classes */
+.bg-primary-50 { background-color: var(--color-primary-50); }
+.bg-primary-100 { background-color: var(--color-primary-100); }
+.bg-primary-500 { background-color: var(--color-primary-500); }
+.bg-primary-600 { background-color: var(--color-primary-600); }
+.bg-primary-700 { background-color: var(--color-primary-700); }
+.bg-primary-900 { background-color: var(--color-primary-900); }
+
+.text-primary-50 { color: var(--color-primary-50); }
+.text-primary-100 { color: var(--color-primary-100); }
+.text-primary-500 { color: var(--color-primary-500); }
+.text-primary-600 { color: var(--color-primary-600); }
+.text-primary-700 { color: var(--color-primary-700); }
+.text-primary-900 { color: var(--color-primary-900); }
+
+.border-primary-200 { border-color: var(--color-primary-100); }
+.border-primary-300 { border-color: var(--color-primary-500); }
+.border-primary-500 { border-color: var(--color-primary-500); }
+
+.bg-accent-100 { background-color: var(--color-accent-500); opacity: 0.1; }
+.bg-accent-500 { background-color: var(--color-accent-500); }
+.bg-accent-600 { background-color: var(--color-accent-600); }
+.text-accent-600 { color: var(--color-accent-600); }
+
+.bg-success-500 { background-color: var(--color-success-500); }
+.bg-success-600 { background-color: var(--color-success-600); }
+.text-success-600 { color: var(--color-success-600); }
+
+.bg-error-500 { background-color: var(--color-error-500); }
+.bg-error-600 { background-color: var(--color-error-600); }
+.text-error-600 { color: var(--color-error-600); }
