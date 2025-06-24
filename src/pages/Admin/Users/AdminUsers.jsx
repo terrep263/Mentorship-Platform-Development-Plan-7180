@@ -1,53 +1,52 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useAuth } from '../../../contexts/AuthContext';
 import SafeIcon from '../../../common/SafeIcon';
 import * as FiIcons from 'react-icons/fi';
 
-const { FiPlus, FiEdit, FiTrash2, FiSearch, FiFilter, FiUser } = FiIcons;
+const { FiPlus, FiEdit, FiTrash2, FiSearch, FiFilter, FiUser, FiShield, FiMail, FiCalendar } = FiIcons;
 
 const AdminUsers = () => {
-  const [users] = useState([
-    {
-      id: 1,
-      name: 'John Doe',
-      email: 'john@example.com',
-      role: 'mentee',
-      subscription: 'yearly',
-      joined: '2024-01-15',
-      lastActive: '2024-01-20',
-      avatar: 'https://ui-avatars.com/api/?name=John+Doe&background=0ea5e9&color=fff'
-    },
-    {
-      id: 2,
-      name: 'Jane Smith',
-      email: 'jane@example.com',
-      role: 'mentor',
-      subscription: 'monthly',
-      joined: '2024-01-14',
-      lastActive: '2024-01-19',
-      avatar: 'https://ui-avatars.com/api/?name=Jane+Smith&background=0ea5e9&color=fff'
-    },
-    {
-      id: 3,
-      name: 'Mike Johnson',
-      email: 'mike@example.com',
-      role: 'admin',
-      subscription: 'yearly',
-      joined: '2024-01-13',
-      lastActive: '2024-01-20',
-      avatar: 'https://ui-avatars.com/api/?name=Mike+Johnson&background=0ea5e9&color=fff'
-    }
-  ]);
-
+  const { getAllUsers, updateUserRole } = useAuth();
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
+
+  useEffect(() => {
+    loadUsers();
+  }, []);
+
+  const loadUsers = async () => {
+    setLoading(true);
+    const result = await getAllUsers();
+    if (result.success) {
+      setUsers(result.data);
+    }
+    setLoading(false);
+  };
+
+  const handleRoleChange = async (userId, newRole) => {
+    const result = await updateUserRole(userId, newRole);
+    if (result.success) {
+      // Refresh users list
+      loadUsers();
+    }
+  };
 
   const filteredUsers = users.filter(user => {
-    const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const matchesSearch = user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          user.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRole = filterRole === 'all' || user.role === filterRole;
-    return matchesSearch && matchesRole;
+    const matchesStatus = filterStatus === 'all' || 
+                         (filterStatus === 'verified' && user.email_verified) ||
+                         (filterStatus === 'unverified' && !user.email_verified) ||
+                         (filterStatus === 'active' && user.is_active) ||
+                         (filterStatus === 'inactive' && !user.is_active);
+    
+    return matchesSearch && matchesRole && matchesStatus;
   });
 
   const getRoleBadgeColor = (role) => {
@@ -59,28 +58,91 @@ const AdminUsers = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">All Users</h1>
-          <p className="text-gray-600 mt-1">Manage user accounts and permissions</p>
+          <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
+          <p className="text-gray-600 mt-1">Manage user accounts, roles, and permissions</p>
         </div>
-        <Link
-          to="/admin/users/new"
-          className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
-        >
-          <SafeIcon icon={FiPlus} className="w-4 h-4" />
-          Add New User
-        </Link>
+        <div className="text-sm text-gray-600">
+          Total Users: {users.length}
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-white p-4 rounded-xl shadow-sm border">
+          <div className="flex items-center gap-3">
+            <div className="bg-red-100 p-2 rounded-lg">
+              <SafeIcon icon={FiShield} className="w-5 h-5 text-red-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-gray-900">
+                {users.filter(u => u.role === 'admin').length}
+              </p>
+              <p className="text-sm text-gray-600">Admins</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white p-4 rounded-xl shadow-sm border">
+          <div className="flex items-center gap-3">
+            <div className="bg-blue-100 p-2 rounded-lg">
+              <SafeIcon icon={FiUser} className="w-5 h-5 text-blue-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-gray-900">
+                {users.filter(u => u.role === 'mentor').length}
+              </p>
+              <p className="text-sm text-gray-600">Mentors</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white p-4 rounded-xl shadow-sm border">
+          <div className="flex items-center gap-3">
+            <div className="bg-green-100 p-2 rounded-lg">
+              <SafeIcon icon={FiUser} className="w-5 h-5 text-green-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-gray-900">
+                {users.filter(u => u.role === 'mentee').length}
+              </p>
+              <p className="text-sm text-gray-600">Mentees</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white p-4 rounded-xl shadow-sm border">
+          <div className="flex items-center gap-3">
+            <div className="bg-yellow-100 p-2 rounded-lg">
+              <SafeIcon icon={FiMail} className="w-5 h-5 text-yellow-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-gray-900">
+                {users.filter(u => !u.email_verified).length}
+              </p>
+              <p className="text-sm text-gray-600">Unverified</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Filters */}
       <div className="bg-white p-4 rounded-xl shadow-sm border">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1 relative">
-            <SafeIcon icon={FiSearch} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <SafeIcon 
+              icon={FiSearch} 
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" 
+            />
             <input
               type="text"
               placeholder="Search users..."
@@ -103,6 +165,18 @@ const AdminUsers = () => {
               <option value="mentee">Mentee</option>
             </select>
           </div>
+
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          >
+            <option value="all">All Status</option>
+            <option value="verified">Email Verified</option>
+            <option value="unverified">Email Unverified</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
         </div>
       </div>
 
@@ -119,7 +193,7 @@ const AdminUsers = () => {
                   Role
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Subscription
+                  Status
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Joined
@@ -140,27 +214,51 @@ const AdminUsers = () => {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <img
-                        src={user.avatar}
-                        alt={user.name}
+                        src={user.avatar_url}
+                        alt={user.full_name}
                         className="w-10 h-10 rounded-full"
                       />
                       <div>
-                        <p className="font-medium text-gray-900">{user.name}</p>
+                        <p className="font-medium text-gray-900">{user.full_name}</p>
                         <p className="text-sm text-gray-600">{user.email}</p>
                       </div>
                     </div>
                   </td>
+                  
                   <td className="px-6 py-4">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${getRoleBadgeColor(user.role)}`}>
-                      {user.role}
-                    </span>
+                    <select
+                      value={user.role}
+                      onChange={(e) => handleRoleChange(user.id, e.target.value)}
+                      className={`px-2.5 py-0.5 rounded-full text-xs font-medium border-0 ${getRoleBadgeColor(user.role)}`}
+                    >
+                      <option value="admin">Admin</option>
+                      <option value="mentor">Mentor</option>
+                      <option value="mentee">Mentee</option>
+                    </select>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-600 capitalize">
-                    {user.subscription}
+                  
+                  <td className="px-6 py-4">
+                    <div className="flex flex-col gap-1">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        user.email_verified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {user.email_verified ? 'Verified' : 'Unverified'}
+                      </span>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        user.is_active ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {user.is_active ? 'Active' : 'Inactive'}
+                      </span>
+                    </div>
                   </td>
+                  
                   <td className="px-6 py-4 text-sm text-gray-600">
-                    {new Date(user.joined).toLocaleDateString()}
+                    <div className="flex items-center gap-1">
+                      <SafeIcon icon={FiCalendar} className="w-4 h-4" />
+                      {new Date(user.created_at).toLocaleDateString()}
+                    </div>
                   </td>
+                  
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
                       <Link
@@ -170,12 +268,6 @@ const AdminUsers = () => {
                       >
                         <SafeIcon icon={FiEdit} className="w-4 h-4" />
                       </Link>
-                      <button
-                        className="p-2 text-gray-400 hover:text-red-600 transition-colors"
-                        title="Delete User"
-                      >
-                        <SafeIcon icon={FiTrash2} className="w-4 h-4" />
-                      </button>
                     </div>
                   </td>
                 </motion.tr>
@@ -189,9 +281,9 @@ const AdminUsers = () => {
             <SafeIcon icon={FiUser} className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">No users found</h3>
             <p className="text-gray-600">
-              {searchTerm || filterRole !== 'all' 
+              {searchTerm || filterRole !== 'all' || filterStatus !== 'all'
                 ? 'Try adjusting your search or filter criteria'
-                : 'Get started by adding your first user'
+                : 'No users have been created yet'
               }
             </p>
           </div>

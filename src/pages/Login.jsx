@@ -1,43 +1,89 @@
 import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import SafeIcon from '../common/SafeIcon';
 import * as FiIcons from 'react-icons/fi';
 
-const { FiMail, FiLock, FiUser, FiEye, FiEyeOff } = FiIcons;
+const { FiMail, FiLock, FiUser, FiEye, FiEyeOff, FiCheck, FiAlertCircle } = FiIcons;
 
 const Login = () => {
-  const [isLogin, setIsLogin] = useState(true);
+  const [isSignUp, setIsSignUp] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    name: ''
+    fullName: '',
+    confirmPassword: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [needsVerification, setNeedsVerification] = useState(false);
 
-  const { login, register } = useAuth();
+  const { signIn, signUp, resendVerification } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-
   const from = location.state?.from?.pathname || '/dashboard';
+
+  const validateForm = () => {
+    if (!formData.email || !formData.password) {
+      setError('Email and password are required');
+      return false;
+    }
+
+    if (isSignUp) {
+      if (!formData.fullName) {
+        setError('Full name is required');
+        return false;
+      }
+      if (formData.password.length < 6) {
+        setError('Password must be at least 6 characters');
+        return false;
+      }
+      if (formData.password !== formData.confirmPassword) {
+        setError('Passwords do not match');
+        return false;
+      }
+    }
+
+    return true;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!validateForm()) return;
+
     setLoading(true);
     setError('');
+    setSuccess('');
 
     try {
-      const result = isLogin 
-        ? await login(formData.email, formData.password)
-        : await register(formData.email, formData.password, formData.name);
-
-      if (result.success) {
-        navigate(from, { replace: true });
+      if (isSignUp) {
+        const result = await signUp(formData.email, formData.password, formData.fullName);
+        
+        if (result.success) {
+          setSuccess(result.message);
+          setNeedsVerification(result.needsVerification);
+          if (!result.needsVerification) {
+            navigate(from, { replace: true });
+          }
+        } else {
+          setError(result.error);
+        }
       } else {
-        setError(result.error);
+        const result = await signIn(formData.email, formData.password);
+        
+        if (result.success) {
+          navigate(from, { replace: true });
+        } else {
+          setError(result.error);
+          // Check if error is about email verification
+          if (result.error.includes('verify your email')) {
+            setNeedsVerification(true);
+          }
+        }
       }
     } catch (err) {
       setError('An unexpected error occurred');
@@ -46,51 +92,122 @@ const Login = () => {
     }
   };
 
+  const handleResendVerification = async () => {
+    if (!formData.email) {
+      setError('Please enter your email address');
+      return;
+    }
+
+    setLoading(true);
+    const result = await resendVerification(formData.email);
+    
+    if (result.success) {
+      setSuccess(result.message);
+      setError('');
+    } else {
+      setError(result.error);
+    }
+    setLoading(false);
+  };
+
   const handleChange = (e) => {
     setFormData(prev => ({
       ...prev,
       [e.target.name]: e.target.value
     }));
+    // Clear errors when user starts typing
+    if (error) setError('');
+  };
+
+  const toggleMode = () => {
+    setIsSignUp(!isSignUp);
+    setError('');
+    setSuccess('');
+    setNeedsVerification(false);
+    setFormData({
+      email: formData.email, // Keep email
+      password: '',
+      fullName: '',
+      confirmPassword: ''
+    });
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 to-white flex items-center justify-center px-4">
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md"
       >
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            {isLogin ? 'Welcome Back' : 'Join Us'}
+            {isSignUp ? 'Create Account' : 'Welcome Back'}
           </h1>
           <p className="text-gray-600">
-            {isLogin ? 'Sign in to continue your journey' : 'Start your mentorship journey today'}
+            {isSignUp 
+              ? 'Start your mentorship journey today' 
+              : 'Sign in to continue your journey'
+            }
           </p>
         </div>
 
+        {/* Success Message */}
+        {success && (
+          <div className="bg-green-50 border border-green-200 text-green-700 p-4 rounded-lg mb-6 flex items-start gap-3">
+            <SafeIcon icon={FiCheck} className="w-5 h-5 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-medium">{success}</p>
+              {needsVerification && (
+                <button
+                  onClick={handleResendVerification}
+                  disabled={loading}
+                  className="text-sm text-green-600 hover:text-green-700 underline mt-1 disabled:opacity-50"
+                >
+                  Resend verification email
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Error Message */}
         {error && (
-          <div className="bg-red-50 text-red-600 p-3 rounded-lg mb-6 text-sm">
-            {error}
+          <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg mb-6 flex items-start gap-3">
+            <SafeIcon icon={FiAlertCircle} className="w-5 h-5 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-medium">{error}</p>
+              {needsVerification && (
+                <button
+                  onClick={handleResendVerification}
+                  disabled={loading}
+                  className="text-sm text-red-600 hover:text-red-700 underline mt-1 disabled:opacity-50"
+                >
+                  Resend verification email
+                </button>
+              )}
+            </div>
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {!isLogin && (
+          {isSignUp && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Full Name
+                Full Name *
               </label>
               <div className="relative">
-                <SafeIcon icon={FiUser} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <SafeIcon 
+                  icon={FiUser} 
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" 
+                />
                 <input
                   type="text"
-                  name="name"
-                  value={formData.name}
+                  name="fullName"
+                  value={formData.fullName}
                   onChange={handleChange}
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   placeholder="Enter your full name"
-                  required={!isLogin}
+                  required={isSignUp}
                 />
               </div>
             </div>
@@ -98,10 +215,13 @@ const Login = () => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Email Address
+              Email Address *
             </label>
             <div className="relative">
-              <SafeIcon icon={FiMail} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <SafeIcon 
+                icon={FiMail} 
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" 
+              />
               <input
                 type="email"
                 name="email"
@@ -116,10 +236,13 @@ const Login = () => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Password
+              Password *
             </label>
             <div className="relative">
-              <SafeIcon icon={FiLock} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <SafeIcon 
+                icon={FiLock} 
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" 
+              />
               <input
                 type={showPassword ? 'text' : 'password'}
                 name="password"
@@ -137,35 +260,72 @@ const Login = () => {
                 <SafeIcon icon={showPassword ? FiEyeOff : FiEye} className="w-5 h-5" />
               </button>
             </div>
+            {isSignUp && (
+              <p className="text-xs text-gray-500 mt-1">Must be at least 6 characters</p>
+            )}
           </div>
+
+          {isSignUp && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Confirm Password *
+              </label>
+              <div className="relative">
+                <SafeIcon 
+                  icon={FiLock} 
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" 
+                />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  placeholder="Confirm your password"
+                  required={isSignUp}
+                />
+              </div>
+            </div>
+          )}
 
           <button
             type="submit"
             disabled={loading}
             className="w-full bg-primary-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? 'Please wait...' : (isLogin ? 'Sign In' : 'Create Account')}
+            {loading ? 'Please wait...' : (isSignUp ? 'Create Account' : 'Sign In')}
           </button>
         </form>
 
         <div className="mt-6 text-center">
           <button
-            onClick={() => setIsLogin(!isLogin)}
+            onClick={toggleMode}
             className="text-primary-600 hover:text-primary-700 font-medium"
           >
-            {isLogin ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
+            {isSignUp 
+              ? 'Already have an account? Sign in' 
+              : "Don't have an account? Sign up"
+            }
           </button>
         </div>
 
-        {/* Demo credentials */}
-        <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-          <p className="text-sm font-medium text-gray-700 mb-2">Demo Credentials:</p>
-          <div className="text-xs text-gray-600 space-y-1">
-            <div>Admin: admin@demo.com</div>
-            <div>Mentor: mentor@demo.com</div>
-            <div>Mentee: mentee@demo.com</div>
-            <div>Password: any password</div>
+        {!isSignUp && (
+          <div className="mt-4 text-center">
+            <Link
+              to="/forgot-password"
+              className="text-sm text-gray-600 hover:text-gray-800"
+            >
+              Forgot your password?
+            </Link>
           </div>
+        )}
+
+        {/* Security Notice */}
+        <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+          <p className="text-xs text-gray-600 text-center">
+            <SafeIcon icon={FiLock} className="w-3 h-3 inline mr-1" />
+            Your data is protected with enterprise-grade security
+          </p>
         </div>
       </motion.div>
     </div>

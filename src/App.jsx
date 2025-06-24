@@ -22,6 +22,9 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import QuestLoginPage from './pages/QuestLogin';
 import QuestOnboardingPage from './pages/QuestOnboarding';
+import EmailVerification from './pages/EmailVerification';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 
 // Protected Pages
 import GetStartedPage from './pages/GetStartedPage';
@@ -39,6 +42,7 @@ import AdminPosts from './pages/Admin/Posts/AdminPosts';
 import AdminPostEditor from './pages/Admin/Posts/AdminPostEditor';
 import AdminCourses from './pages/Admin/Courses/AdminCourses';
 import AdminUsers from './pages/Admin/Users/AdminUsers';
+import AdminUserEditor from './pages/Admin/Users/AdminUserEditor';
 import AdminAnalytics from './pages/Admin/Analytics/AdminAnalytics';
 import AdminTheme from './pages/Admin/Appearance/AdminTheme';
 import AdminSettings from './pages/Admin/Settings/AdminSettings';
@@ -46,10 +50,9 @@ import AdminSettings from './pages/Admin/Settings/AdminSettings';
 // Components
 import ProtectedRoute from './components/Auth/ProtectedRoute';
 import QuestProtectedRoute from './components/Auth/QuestProtectedRoute';
-
 import questConfig from './config/questConfig';
 
-// Initialize Stripe
+// Initialize Stripe 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_example');
 
 function App() {
@@ -72,71 +75,64 @@ function App() {
                         <Route path="/" element={<Layout><Home /></Layout>} />
                         <Route path="/login" element={<Layout><Login /></Layout>} />
                         <Route path="/quest-login" element={<Layout><QuestLoginPage /></Layout>} />
-                        <Route path="/onboarding" element={
-                          <Layout>
-                            <QuestProtectedRoute requireOnboarding={false}>
-                              <QuestOnboardingPage />
-                            </QuestProtectedRoute>
-                          </Layout>
-                        } />
+                        <Route path="/forgot-password" element={<Layout><ForgotPassword /></Layout>} />
+                        <Route path="/reset-password" element={<Layout><ResetPassword /></Layout>} />
+                        <Route path="/verify-email" element={<Layout><EmailVerification /></Layout>} />
+                        
+                        <Route path="/onboarding" element={<Layout>
+                          <QuestProtectedRoute requireOnboarding={false}>
+                            <QuestOnboardingPage />
+                          </QuestProtectedRoute>
+                        </Layout>} />
 
                         {/* Protected User Routes */}
-                        <Route path="/dashboard" element={
-                          <Layout>
-                            <QuestProtectedRoute>
-                              <Dashboard />
-                            </QuestProtectedRoute>
-                          </Layout>
-                        } />
-                        <Route path="/get-started" element={
-                          <Layout>
-                            <QuestProtectedRoute>
-                              <GetStartedPage />
-                            </QuestProtectedRoute>
-                          </Layout>
-                        } />
-                        <Route path="/courses" element={
-                          <Layout>
-                            <QuestProtectedRoute>
-                              <Courses />
-                            </QuestProtectedRoute>
-                          </Layout>
-                        } />
-                        <Route path="/courses/:courseId" element={
-                          <Layout>
-                            <QuestProtectedRoute>
-                              <CourseDetail />
-                            </QuestProtectedRoute>
-                          </Layout>
-                        } />
-                        <Route path="/courses/:courseId/lessons/:lessonId" element={
-                          <Layout>
-                            <QuestProtectedRoute>
-                              <LessonView />
-                            </QuestProtectedRoute>
-                          </Layout>
-                        } />
-                        <Route path="/blog" element={
-                          <Layout>
-                            <QuestProtectedRoute>
-                              <Blog />
-                            </QuestProtectedRoute>
-                          </Layout>
-                        } />
-                        <Route path="/blog/:postId" element={
-                          <Layout>
-                            <QuestProtectedRoute>
-                              <BlogPost />
-                            </QuestProtectedRoute>
-                          </Layout>
-                        } />
-                        <Route path="/subscription" element={
-                          <Layout>
-                            <QuestProtectedRoute>
-                              <Subscription />
-                            </QuestProtectedRoute>
-                          </Layout>
-                        } />
+                        <Route path="/dashboard" element={<Layout>
+                          <ProtectedRoute>
+                            <Dashboard />
+                          </ProtectedRoute>
+                        </Layout>} />
+                        
+                        <Route path="/get-started" element={<Layout>
+                          <ProtectedRoute>
+                            <GetStartedPage />
+                          </ProtectedRoute>
+                        </Layout>} />
+                        
+                        <Route path="/courses" element={<Layout>
+                          <ProtectedRoute>
+                            <Courses />
+                          </ProtectedRoute>
+                        </Layout>} />
+                        
+                        <Route path="/courses/:courseId" element={<Layout>
+                          <ProtectedRoute>
+                            <CourseDetail />
+                          </ProtectedRoute>
+                        </Layout>} />
+                        
+                        <Route path="/courses/:courseId/lessons/:lessonId" element={<Layout>
+                          <ProtectedRoute>
+                            <LessonView />
+                          </ProtectedRoute>
+                        </Layout>} />
+                        
+                        <Route path="/blog" element={<Layout>
+                          <ProtectedRoute>
+                            <Blog />
+                          </ProtectedRoute>
+                        </Layout>} />
+                        
+                        <Route path="/blog/:postId" element={<Layout>
+                          <ProtectedRoute>
+                            <BlogPost />
+                          </ProtectedRoute>
+                        </Layout>} />
+                        
+                        <Route path="/subscription" element={<Layout>
+                          <ProtectedRoute>
+                            <Subscription />
+                          </ProtectedRoute>
+                        </Layout>} />
 
                         {/* Admin Routes - All under /admin with AdminLayout */}
                         <Route path="/admin" element={
@@ -163,8 +159,8 @@ function App() {
                           
                           {/* User Management */}
                           <Route path="users" element={<AdminUsers />} />
-                          <Route path="users/new" element={<div>Add New User</div>} />
-                          <Route path="users/edit/:id" element={<div>Edit User</div>} />
+                          <Route path="users/new" element={<AdminUserEditor />} />
+                          <Route path="users/edit/:id" element={<AdminUserEditor />} />
                           <Route path="user-roles" element={<div>User Roles</div>} />
                           <Route path="user-analytics" element={<div>User Analytics</div>} />
                           
